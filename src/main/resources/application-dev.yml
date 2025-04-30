@@ -9,3 +9,17 @@ spring:
       minimum-idle: 2
       idle-timeout: 30000
       max-lifetime: 1800000
+  # kafka
+  kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: true
+# 阿里云OSS配置
+aliyun:
+  oss:
+    endpoint: ${ALIYUN_OSS_ENDPOINT}
+    accessKeyId: ${OSS_ACCESS_KEY_ID}
+    accessKeySecret: ${OSS_ACCESS_KEY_SECRET}
+    bucketName: ${ALIYUN_OSS_BUCKET_NAME}
