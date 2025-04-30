@@ -1,0 +1,15 @@
+@startuml
+[*] --> UploadPending : 文件上传
+
+UploadPending --> Parsing : Kafka 触发解析
+Parsing --> ParseFailed : 文件格式错误等
+Parsing --> ParseSuccess : 解析成功
+
+ParseSuccess --> Generating : Kafka 触发AI生成
+Generating --> GenerateFailed : 调用LLM失败 / 幻觉
+Generating --> Generated : 图表生成成功
+
+GenerateFailed --> [*]
+Generated --> [*]
+ParseFailed --> [*]
+@enduml

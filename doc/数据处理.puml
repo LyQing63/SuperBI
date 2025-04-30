@@ -1,0 +1,35 @@
+@startuml
+actor User
+participant "Web 前端" as Frontend
+participant "Spring Boot 后端" as Backend
+participant "Kafka Broker" as Kafka
+participant "File Parser Service" as Parser
+participant "AI Chart Generator" as AI
+database "MySQL" as DB
+
+User -> Frontend: 上传 Excel 文件
+Frontend -> Backend: POST /upload
+Backend -> Backend: 保存文件到本地
+Backend -> DB: 保存上传记录 (file_upload)
+Backend -> Kafka: 发送 file_upload_event
+
+Kafka -> Parser: 消费 file_upload_event
+Parser -> Parser: 使用 EasyExcel 解析文件
+Parser -> DB: 保存清洗后数据 (parsed_data)
+Parser -> Kafka: 发送 file_parse_complete_event
+
+Kafka -> AI: 消费 file_parse_complete_event
+AI -> AI: 调用 LangChain4j + LLM
+AI -> AI: 校验生成 ECharts JSON
+alt 幻觉/生成失败
+    AI -> Kafka: 发送 chart_generate_fail_event
+    AI -> DB: 更新状态为 FAILED
+else 成功
+    AI -> DB: 保存图表配置 (chart_generate)
+end
+
+User -> Frontend: 查看图表
+Frontend -> Backend: GET /chart/{fileId}
+Backend -> DB: 查询 chart_generate
+Backend -> Frontend: 返回 ECharts JSON
+@enduml
