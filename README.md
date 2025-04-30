@@ -1,34 +1,59 @@
-# Getting Started
+# SuperBI - AI赋能的数据可视化平台
 
-### Reference Documentation
+SuperBI 是一个基于 Java、Spring Boot、LangChain4j 的智能 BI 平台，支持用户上传 Excel 或表格数据，自动完成数据解析、调用大模型生成可视化图表（基于 ECharts），并在前端展示。项目使用 Kafka 实现异步解耦，MySQL 管理数据存储，具备良好的可扩展性与容错机制。
 
-For further reference, please consider the following sections:
+## ✨ 项目功能特性
 
-* [Official Apache Maven documentation](https://maven.apache.org/guides/index.html)
-* [Spring Boot Maven Plugin Reference Guide](https://docs.spring.io/spring-boot/3.4.5/maven-plugin)
-* [Create an OCI image](https://docs.spring.io/spring-boot/3.4.5/maven-plugin/build-image.html)
-* [Spring Data Redis (Access+Driver)](https://docs.spring.io/spring-boot/3.4.5/reference/data/nosql.html#data.nosql.redis)
-* [Spring Boot DevTools](https://docs.spring.io/spring-boot/3.4.5/reference/using/devtools.html)
-* [Spring for Apache Kafka](https://docs.spring.io/spring-boot/3.4.5/reference/messaging/kafka.html)
-* [Validation](https://docs.spring.io/spring-boot/3.4.5/reference/io/validation.html)
-* [Spring Web](https://docs.spring.io/spring-boot/3.4.5/reference/web/servlet.html)
+- ✅ 支持 Excel / CSV 文件上传
+- ✅ 基于 EasyExcel 实现高性能数据解析
+- ✅ 利用 LangChain4j 调用大语言模型（如 OpenAI、通义千问）生成图表配置
+- ✅ Kafka 异步驱动任务流：上传 → 解析 → 图表生成
+- ✅ 自动生成符合 ECharts 标准的 JSON 图表配置
+- ✅ 提供图表查询接口，供前端渲染调用
+- ✅ 错误处理机制完善，支持生成失败、AI幻觉校验与状态跟踪
 
-### Guides
+## 🚀 快速启动
 
-The following guides illustrate how to use some features concretely:
+### 环境要求
 
-* [Messaging with Redis](https://spring.io/guides/gs/messaging-redis/)
-* [Accessing data with MySQL](https://spring.io/guides/gs/accessing-data-mysql/)
-* [Validation](https://spring.io/guides/gs/validating-form-input/)
-* [Building a RESTful Web Service](https://spring.io/guides/gs/rest-service/)
-* [Serving Web Content with Spring MVC](https://spring.io/guides/gs/serving-web-content/)
-* [Building REST services with Spring](https://spring.io/guides/tutorials/rest/)
+- Java 21 或更高（推荐 Java 24）
+- Maven 3.9+
+- Kafka 服务已启动
+- MySQL 数据库已创建并配置
+- 可选：Redis（用于缓存）和 MinIO（用于文件存储）
 
-### Maven Parent overrides
+### 启动步骤
 
-Due to Maven's design, elements are inherited from the parent POM to the project POM.
-While most of the inheritance is fine, it also inherits unwanted elements like `<license>` and `<developers>` from the
-parent.
-To prevent this, the project POM contains empty overrides for these elements.
-If you manually switch to a different parent and actually want the inheritance, you need to remove those overrides.
+1. 克隆项目到本地：
+   ```bash
+   git clone https://github.com/your-org/SuperBI.git
+   cd SuperBI
+   ```
 
+2. 修改配置文件（如 `application.yml`），填写数据库、Kafka、AI模型等参数。
+
+3. 启动 Spring Boot 项目：
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+4. 访问接口：
+   - 上传文件：`POST /api/upload`
+   - 获取图表：`GET /api/chart/{fileId}`
+
+### 示例
+
+使用 Postman 上传 Excel 文件：
+```http
+POST /api/upload
+Content-Type: multipart/form-data
+Body: file=your_excel_file.xlsx
+```
+
+返回内容中包含 fileId，可用于查询图表：
+
+```http
+GET /api/chart/{fileId}
+```
+
+返回 JSON 格式的 ECharts 配置，可直接渲染。
