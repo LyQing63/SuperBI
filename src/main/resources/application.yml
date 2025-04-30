@@ -1,3 +1,5 @@
 spring:
   application:
     name: SuperBI
+  profiles:
+    active: dev

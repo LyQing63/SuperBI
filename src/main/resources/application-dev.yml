@@ -1,6 +1,11 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306?superBI
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/superBI?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
     username: root
     password: zht20040723zht
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      max-lifetime: 1800000
