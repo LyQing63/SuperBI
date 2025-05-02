@@ -1,0 +1,22 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.lyqing64.github.superbi.mapper.ChartGenerateMapper">
+
+    <resultMap id="BaseResultMap" type="io.lyqing64.github.superbi.domain.ChartGenerate">
+        <id property="id" column="id"/>
+        <result property="fileId" column="file_id"/>
+        <result property="chartJson" column="chart_json"/>
+        <result property="modelUsed" column="model_used"/>
+        <result property="promptUsed" column="prompt_used"/>
+        <result property="analysis" column="analysis"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id
+        ,file_id,chart_json,model_used,prompt_used,analysis,
+        created_at,status
+    </sql>
+</mapper>

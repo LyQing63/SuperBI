@@ -1,5 +1,6 @@
 package io.lyqing64.github.superbi.common;
 
+import io.lyqing64.github.superbi.enums.BusinessCode;
 import lombok.Data;
 
 @Data
