@@ -6,10 +6,10 @@
 
     <resultMap id="BaseResultMap" type="io.lyqing64.github.superbi.domain.FileUpload">
         <id property="id" column="id"/>
-        <result property="user_id" column="user_id"/>
-        <result property="file_name" column="file_name"/>
-        <result property="file_path" column="file_path"/>
-        <result property="upload_time" column="upload_time"/>
+        <result property="userId" column="user_id"/>
+        <result property="fileName" column="file_name"/>
+        <result property="filePath" column="file_path"/>
+        <result property="uploadTime" column="upload_time"/>
         <result property="status" column="status"/>
     </resultMap>
 

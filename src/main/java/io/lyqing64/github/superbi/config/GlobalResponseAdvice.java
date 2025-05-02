@@ -1,7 +1,7 @@
 package io.lyqing64.github.superbi.config;
 
-import io.lyqing64.github.superbi.common.BusinessCode;
 import io.lyqing64.github.superbi.common.Response;
+import io.lyqing64.github.superbi.enums.BusinessCode;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;

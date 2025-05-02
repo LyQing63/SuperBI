@@ -2,16 +2,20 @@ package io.lyqing64.github.superbi.service.impl;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.support.ExcelTypeEnum;
-import io.lyqing64.github.superbi.common.BusinessCode;
 import io.lyqing64.github.superbi.common.Response;
 import io.lyqing64.github.superbi.domain.FileUpload;
 import io.lyqing64.github.superbi.dto.FileUploadMessageDto;
+import io.lyqing64.github.superbi.enums.BusinessCode;
+import io.lyqing64.github.superbi.enums.TaskEventEnums;
 import io.lyqing64.github.superbi.manager.kafka.producer.FileUploadProducer;
+import io.lyqing64.github.superbi.service.ChartGenerateService;
 import io.lyqing64.github.superbi.service.FileService;
 import io.lyqing64.github.superbi.service.FileUploadService;
+import io.lyqing64.github.superbi.service.task.TaskStatusService;
+import io.lyqing64.github.superbi.utils.FileUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
@@ -24,16 +28,27 @@ import java.util.Map;
 @Slf4j
 public class FileServiceImpl implements FileService {
 
-    @Autowired
-    private FileUploadService fileUploadService;
+    private final FileUploadService fileUploadService;
+    private final OssStorageService ossStorageService;
+    private final FileUploadProducer fileUploadProducer;
+    private final ChartGenerateService chartGenerateService;
+    private final TaskStatusService taskStatusService;
 
-    @Autowired
-    private OssStorageService ossStorageService; // 新增OSS服务注入
 
-    @Autowired
-    private FileUploadProducer fileUploadProducer; // 新增Kafka生产者注入
+    public FileServiceImpl(
+            FileUploadService fileUploadService, OssStorageService ossStorageService,
+            FileUploadProducer fileUploadProducer, ChartGenerateService chartGenerateService,
+            TaskStatusService taskStatusService) {
+
+        this.fileUploadService = fileUploadService;
+        this.ossStorageService = ossStorageService;
+        this.fileUploadProducer = fileUploadProducer;
+        this.chartGenerateService = chartGenerateService;
+        this.taskStatusService = taskStatusService;
+    }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Response<List<Map<Integer, String>>> uploadAndParseFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             log.error("上传文件为空");
@@ -64,13 +79,15 @@ public class FileServiceImpl implements FileService {
 
                 // 保存文件元信息到数据库
                 fileUploadService.save(fileUpload);
-
+                // 任务启动
+                chartGenerateService.openNewTask(fileUpload.getId());
+                log.info("任务启动成功： taskId {}", fileUpload.getId());
                 // 新增：构造并发送Kafka消息
                 FileUploadMessageDto messageDto = new FileUploadMessageDto();
                 messageDto.setFileId(fileUpload.getId());
                 // 如果需要幂等ID，可以从请求参数或其他来源获取
                 fileUploadProducer.sendFileUploadMessage(messageDto);
-
+                taskStatusService.sendEvent(fileUpload.getId(), TaskEventEnums.UPLOAD_COMPLETE);
             } catch (IOException e) {
                 log.error("文件上传失败: {}", e.getMessage());
                 return Response.error(BusinessCode.FILE_UPLOAD_FAILED);
@@ -78,7 +95,7 @@ public class FileServiceImpl implements FileService {
 
             // 使用新输入流解析文件
             try (InputStream inputStreamForParse = new ByteArrayInputStream(fileBytes)) {
-                ExcelTypeEnum excelType = determineExcelType(originalFilename);
+                ExcelTypeEnum excelType = FileUtils.determineExcelType(originalFilename);
 
                 List<Map<Integer, String>> dataList = EasyExcel.read(inputStreamForParse)
                         .excelType(excelType)
@@ -102,12 +119,5 @@ public class FileServiceImpl implements FileService {
         }
     }
 
-    private ExcelTypeEnum determineExcelType(String filename) {
-        if (filename.endsWith(".xls")) {
-            return ExcelTypeEnum.XLS;
-        } else if (filename.endsWith(".xlsx")) {
-            return ExcelTypeEnum.XLSX;
-        }
-        throw new IllegalArgumentException("Unsupported file type");
-    }
+
 }

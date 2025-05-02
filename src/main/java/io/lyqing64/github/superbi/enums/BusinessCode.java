@@ -1,4 +1,4 @@
-package io.lyqing64.github.superbi.common;
+package io.lyqing64.github.superbi.enums;
 
 import lombok.Getter;
 

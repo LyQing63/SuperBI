@@ -16,4 +16,12 @@ public class KafkaProducerConfig {
                 .replicas(1)
                 .build();
     }
+
+    @Bean  // 新增文件上传主题配置
+    public NewTopic fileParserTopic() {
+        return TopicBuilder.name(KafkaConstants.FILE_PARSE_TOPIC)
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
 }

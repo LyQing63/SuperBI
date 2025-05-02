@@ -2,10 +2,14 @@ package io.lyqing64.github.superbi.service.impl;
 
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
+import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.PutObjectRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 @Service
@@ -41,6 +45,52 @@ public class OssStorageService {
             // 关闭OSS客户端
             ossClient.shutdown();
         }
+    }
+
+    /**
+     * 下载OSS中的文件
+     *
+     * @param objectName 文件在OSS中的名称
+     * @return 文件输入流
+     */
+    public InputStream downloadFile(String objectName) {
+        OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
+        try {
+            OSSObject ossObject = ossClient.getObject(bucketName, objectName);
+            return ossObject.getObjectContent();
+        } finally {
+            ossClient.shutdown();
+        }
+    }
+
+    public File downloadFileToTmpFile(String objectName) throws IOException {
+        OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
+        try {
+            OSSObject ossObject = ossClient.getObject(bucketName, objectName);
+            return saveToTempFile(ossObject.getObjectContent(), objectName);
+        } finally {
+            ossClient.shutdown();
+        }
+    }
+
+    /**
+     * 将 InputStream 保存为临时文件
+     */
+    public File saveToTempFile(InputStream inputStream, String filename) throws IOException {
+        File tempDir = new File("target/tmp");
+        if (!tempDir.exists()) {
+            tempDir.mkdirs();
+        }
+
+        File tempFile = new File(tempDir, filename);
+        try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+            byte[] buffer = new byte[8192];
+            int len;
+            while ((len = inputStream.read(buffer)) != -1) {
+                fos.write(buffer, 0, len);
+            }
+        }
+        return tempFile;
     }
 
     /**
