@@ -9,6 +9,7 @@ import io.lyqing64.github.superbi.service.AiService;
 import io.lyqing64.github.superbi.service.ChartGenerateService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -25,6 +26,7 @@ public class FileParserTaskService {
     }
 
     @IdempotentTask(key = "#fileParseMessageDto.correlationId", timeoutSeconds = 600)
+    @Transactional(rollbackFor = Exception.class)
     public void parseFile(FileParseMessageDto fileParseMessageDto) throws Exception {
         ChartGeneratorResponse assistant = (ChartGeneratorResponse) aiService.assistant(fileParseMessageDto.getDataSummary());
         log.info("assistant result: {}", assistant);

@@ -18,4 +18,13 @@ public enum TaskStatusEnums {
         this.code = code;
         this.message = message;
     }
+
+    public static TaskStatusEnums getByCode(String code) {
+        for (TaskStatusEnums taskStatusEnums : values()) {
+            if (taskStatusEnums.getCode().equals(code)) {
+                return taskStatusEnums;
+            }
+        }
+        return null;
+    }
 }

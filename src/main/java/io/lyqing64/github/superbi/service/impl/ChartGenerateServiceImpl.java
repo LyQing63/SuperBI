@@ -8,6 +8,8 @@ import io.lyqing64.github.superbi.mapper.ChartGenerateMapper;
 import io.lyqing64.github.superbi.service.ChartGenerateService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * @author qingly
  * @description 针对表【chart_generate】的数据库操作Service实现
@@ -31,6 +33,11 @@ public class ChartGenerateServiceImpl extends ServiceImpl<ChartGenerateMapper, C
         chartGenerate.setStatus(TaskStatusEnums.WAITING.getCode());
         this.save(chartGenerate);
         return chartGenerate;
+    }
+
+    @Override
+    public List<ChartGenerate> getByTasks() {
+        return this.list(new LambdaQueryWrapper<ChartGenerate>().ne(ChartGenerate::getStatus, TaskStatusEnums.SUCCESS.getCode()));
     }
 }
 

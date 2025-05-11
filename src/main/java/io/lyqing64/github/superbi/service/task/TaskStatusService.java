@@ -10,6 +10,7 @@ import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.statemachine.support.DefaultStateMachineContext;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,6 +19,7 @@ public class TaskStatusService {
     private final StateMachineFactory<TaskStatusEnums, TaskEventEnums> factory;
     private final ChartGenerateService chartGenerateService;
 
+    @Transactional(rollbackFor = Exception.class)
     public TaskStatusEnums sendEvent(Long taskId, TaskEventEnums event) {
         // 查询状态
         ChartGenerate byTaskId = chartGenerateService.getByTaskId(taskId);

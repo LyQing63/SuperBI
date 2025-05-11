@@ -14,8 +14,10 @@ import io.lyqing64.github.superbi.service.FileUploadService;
 import io.lyqing64.github.superbi.service.task.TaskStatusService;
 import io.lyqing64.github.superbi.utils.FileUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
@@ -23,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -34,17 +37,19 @@ public class FileServiceImpl implements FileService {
     private final ChartGenerateService chartGenerateService;
     private final TaskStatusService taskStatusService;
 
+    private final ApplicationEventPublisher eventPublisher;
 
     public FileServiceImpl(
             FileUploadService fileUploadService, OssStorageService ossStorageService,
             FileUploadProducer fileUploadProducer, ChartGenerateService chartGenerateService,
-            TaskStatusService taskStatusService) {
+            TaskStatusService taskStatusService, ApplicationEventPublisher eventPublisher) {
 
         this.fileUploadService = fileUploadService;
         this.ossStorageService = ossStorageService;
         this.fileUploadProducer = fileUploadProducer;
         this.chartGenerateService = chartGenerateService;
         this.taskStatusService = taskStatusService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -85,8 +90,10 @@ public class FileServiceImpl implements FileService {
                 // 新增：构造并发送Kafka消息
                 FileUploadMessageDto messageDto = new FileUploadMessageDto();
                 messageDto.setFileId(fileUpload.getId());
+                messageDto.setCorrelationId(UUID.randomUUID().toString());
                 // 如果需要幂等ID，可以从请求参数或其他来源获取
-                fileUploadProducer.sendFileUploadMessage(messageDto);
+//                fileUploadProducer.sendFileUploadMessage(messageDto);
+                eventPublisher.publishEvent(messageDto);
                 taskStatusService.sendEvent(fileUpload.getId(), TaskEventEnums.UPLOAD_COMPLETE);
             } catch (IOException e) {
                 log.error("文件上传失败: {}", e.getMessage());
@@ -119,5 +126,10 @@ public class FileServiceImpl implements FileService {
         }
     }
 
-
+    @TransactionalEventListener
+    public void handleFileUploadEvent(FileUploadMessageDto event) {
+        log.info("接收到文件上传事件: {}", event);
+        // 处理文件上传事件
+        fileUploadProducer.sendFileUploadMessage(event);
+    }
 }

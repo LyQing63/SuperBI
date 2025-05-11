@@ -10,28 +10,28 @@ import io.lyqing64.github.superbi.manager.kafka.producer.FileParserProducer;
 import io.lyqing64.github.superbi.service.FileUploadService;
 import io.lyqing64.github.superbi.service.impl.OssStorageService;
 import io.lyqing64.github.superbi.utils.FileUtils;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.io.File;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class FileUploadTaskService {
 
     private final OssStorageService ossStorageService;
     private final FileUploadService fileUploadService;
     private final FileParserProducer fileParserProducer;
     private final TaskStatusService taskStatusService;
-
-    public FileUploadTaskService(OssStorageService ossStorageService, FileUploadService fileUploadService, FileParserProducer fileParserProducer, TaskStatusService taskStatusService) {
-        this.ossStorageService = ossStorageService;
-        this.fileUploadService = fileUploadService;
-        this.fileParserProducer = fileParserProducer;
-        this.taskStatusService = taskStatusService;
-    }
+    private final ApplicationEventPublisher eventPublisher;
 
     @IdempotentTask(key = "#fileUploadMessageDto.correlationId", timeoutSeconds = 600)
+    @Transactional(rollbackFor = Exception.class)
     public void parseFile(FileUploadMessageDto fileUploadMessageDto) throws Exception {
         // 获取文件下载路径
         FileUpload fileUpload = fileUploadService.getById(fileUploadMessageDto.getFileId());
@@ -56,7 +56,8 @@ public class FileUploadTaskService {
         fileParseMessageDto.setId(fileUploadMessageDto.getFileId());
         fileParseMessageDto.setDataSummary(csv);
         fileParseMessageDto.setCorrelationId(UUID.randomUUID().toString());
-        fileParserProducer.sendFileParserMessage(fileParseMessageDto);
+
+        eventPublisher.publishEvent(fileParseMessageDto);
 
         log.info("文件解析成功: taskId {}", fileUploadMessageDto.getFileId());
         taskStatusService.sendEvent(fileUploadMessageDto.getFileId(), TaskEventEnums.PARSING_SUCCESS);
@@ -64,6 +65,11 @@ public class FileUploadTaskService {
 
     public void doError(FileUploadMessageDto fileUploadMessageDto) {
         taskStatusService.sendEvent(fileUploadMessageDto.getFileId(), TaskEventEnums.PARSING_ERROR);
+    }
+
+    @TransactionalEventListener
+    public void onTaskStatusChanged(FileParseMessageDto task) {
+        fileParserProducer.sendFileParserMessage(task);
     }
 
 }
