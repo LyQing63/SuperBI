@@ -9,28 +9,26 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-public class FileUploadConsumer {
+public class FileUploadFailedConsumer {
 
     private final FileUploadTaskService fileUploadTaskService;
 
-    public FileUploadConsumer(FileUploadTaskService fileUploadTaskService) {
+    public FileUploadFailedConsumer(FileUploadTaskService fileUploadTaskService) {
         this.fileUploadTaskService = fileUploadTaskService;
     }
 
     @KafkaListener(
-            id = "fileUpload",
-            topics = KafkaConstants.FILE_UPLOAD_TOPIC,
-            groupId = KafkaConstants.FILE_UPLOAD_GROUP,
+            id = "fileUploadDlt",
+            topics = KafkaConstants.FILE_UPLOAD_TOPIC_DLT,
+            groupId = KafkaConstants.FILE_PARSE_DLT_GROUP,
             concurrency = "3"
     )
     public void listen(FileUploadMessageDto fileUploadMessageDto) {
+        log.error("❌ 死信消息：{}", fileUploadMessageDto);
         try {
             fileUploadTaskService.parseFile(fileUploadMessageDto);
         } catch (Exception e) {
-            // 状态更新
-            fileUploadTaskService.doError(fileUploadMessageDto);
-            // 进入私信队列
-            log.error("文件上传失败：{}", e.getMessage());
+            log.error("❌ 重试失败：{}", e.getMessage());
         }
     }
 

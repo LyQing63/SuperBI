@@ -22,7 +22,7 @@ public class FileParserProducer {
      * @param fileParseMessageDto 消息体
      */
     public void sendFileParserMessage(FileParseMessageDto fileParseMessageDto) {
-        kafkaTemplate.send(KafkaConstants.FILE_PARSE_TOPIC, fileParseMessageDto)
+        kafkaTemplate.send(KafkaConstants.FILE_PARSE_TOPIC, String.valueOf(fileParseMessageDto.getId()), fileParseMessageDto)
                 .whenComplete((res, ex) -> {
                     if (ex == null) {
                         log.info("文件csv消息发送成功!");

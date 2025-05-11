@@ -9,29 +9,26 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-public class FileParserConsumer {
+public class FileParserFailedConsumer {
 
     private final FileParserTaskService fileParserTaskService;
 
-    public FileParserConsumer(FileParserTaskService fileParserTaskService) {
+    public FileParserFailedConsumer(FileParserTaskService fileParserTaskService) {
         this.fileParserTaskService = fileParserTaskService;
     }
 
     @KafkaListener(
-            id = "fileParse",
-            topics = KafkaConstants.FILE_PARSE_TOPIC,
-            groupId = KafkaConstants.FILE_PARSE_GROUP,
+            id = "fileParseDlt",
+            topics = KafkaConstants.FILE_PARSE_TOPIC_DLT,
+            groupId = KafkaConstants.FILE_PARSE_DLT_GROUP,
             concurrency = "3"
     )
     public void listen(FileParseMessageDto fileParseMessageDto) {
-
+        log.error("❌ 死信消息：{}", fileParseMessageDto);
         try {
             fileParserTaskService.parseFile(fileParseMessageDto);
         } catch (Exception e) {
-            // 状态更新
-            fileParserTaskService.doError(fileParseMessageDto);
-            // 进入私信队列
-            log.error("图像生成失败：{}", e.getMessage());
+            log.error("❌ 重试失败：{}", e.getMessage());
         }
     }
 
